@@ -43,7 +43,6 @@ int getSenderDescriptor(char * msg){
 	//Check Format
 	int semi = 0;
 	int pos1 = 0, pos2 = 0; //Pos of Destinatario 
-	int start = 0; //Start of Message
 	for(int i = 0; i<l; i++){
 		if(msg[i]==':') {
 			semi++;
@@ -78,13 +77,11 @@ int isDeliverable(char * msg){
 	//Check Format
 	int semi = 0;
 	int pos1 = 0, pos2 = 0; //Pos of Destinatario 
-	int start = 0; //Start of Message
 	for(int i = 0; i<l; i++){
 		if(msg[i]==':') {
 			semi++;
 			if(semi == 1)pos1 = i+1;
 			if(semi==2){ 
-				start = i+1;
 				pos2 = i;
 			}
 		}	
