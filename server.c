@@ -115,12 +115,38 @@ int isDeliverable(char * msg){
 		destinatario[k] = msg[i];
 		k++;
 	}
+	
+	const int size_data = l-pos2;
+	char data[size_data];
+	k = 0;
+	
+	//printf("\nRIGAPERRIGA:\n");
+	for(int i = pos2+1; i<l; i++){
+		data[k] = msg[i];
+		//printf("#%d<%c>\n",k,data[k]);
+		k++;
+	}
+	data[size_data-1] = '\0';
+		
+	
+	size_t temp = strlen("Message Read\n");
+	int descriptor = 0;
+	/*printf("\nIL MESSAGGIO ESTRATTO E' <%s>",data);
+	printf("\nStrlen:%ld\nSizeof:%zu\n",strlen(data),sizeof(data));
+	printf("\nVS\n");
+	printf("\MESSAGE:<%s>","Message Read\n");
+	printf("\nStrlen:%ld\nSizeof:%zu\n",strlen("Message Read\n"),sizeof("Message Read\n"));*/
+	
+	if (strlen(data) == temp && !memcmp(data, "Message Read\n", temp)) {
+		//printf("\nSIAMO NELL IF DEL DELIVERED\n");
+		descriptor = 1000;	
+	}
 
 	//Search in connected USERS:
 	if (users.online==1) return -3; //Online da solo -> USER NOT ONLINE
 	
 	for(int i = 0; i<users.online; i++){
-		if(!memcmp(users.list[i], destinatario, sizeof(destinatario))) return users.socket_desc[i];
+		if(!memcmp(users.list[i], destinatario, sizeof(destinatario))) return descriptor+users.socket_desc[i];
 	}
 	
 	return -3; //USER NOT ONLINE
@@ -185,7 +211,7 @@ void connection_handler(int socket_desc, struct sockaddr_in* client_addr) {
 	buf_len = sizeof(buf);
 	memset(buf, 0, buf_len); //TO CHECK 
     // send custom welcome message - and print user connected on the server thread
-    sprintf(buf, "Hi! I'm an echo server. You are %s talking on port %hu.\nI will send you back whatever"
+    /*sprintf(buf, "Hi! I'm an echo server. You are %s talking on port %hu.\nI will send you back whatever"
             " you send me. I will stop if you send me %s :-)\n", client_ip, client_port, quit_command);
     msg_len = strlen(buf);
     int bytes_sent = 0;
@@ -194,9 +220,9 @@ void connection_handler(int socket_desc, struct sockaddr_in* client_addr) {
         if (ret == -1 && errno == EINTR) continue;
         if (ret == -1) handle_error("Cannot write to the socket");
         bytes_sent += ret;
-    }
+    }*/
 	
-	//int bytes_sent = 0;
+	int bytes_sent = 0;
 	//First value does not arrive
     // echo loop
     while (1) {
@@ -210,8 +236,7 @@ void connection_handler(int socket_desc, struct sockaddr_in* client_addr) {
             if (ret == 0) break;
 		} while ( buf[recv_bytes++] != '\n' );
 		
-
-		
+	
         // check whether I have just been told to quit...
         if (recv_bytes == 0) break;
         if (recv_bytes == quit_command_len && !memcmp(buf, quit_command, quit_command_len)) break;
@@ -220,12 +245,12 @@ void connection_handler(int socket_desc, struct sockaddr_in* client_addr) {
         
         
         
-        //Try to DELIVER Message to USER if Connected
+        //Delivering message to reciever
         //Searching for User
         int test = isDeliverable(buf); //if > returns SOCKET Descriptor of Dest, otherwise error
         //printf("\nResult of test = %d\n",test);
         
-        if(test > 0){ //MSG is Fine and USER is Online - Sendint to DESTINATARIO
+        if(test > 0 && test <1000){ //MSG is Fine and USER is Online - Sendint to DESTINATARIO
 			bytes_sent=0;
 			while ( bytes_sent < recv_bytes) {
 				ret = send(test, buf + bytes_sent, recv_bytes - bytes_sent, 0);
@@ -239,11 +264,6 @@ void connection_handler(int socket_desc, struct sockaddr_in* client_addr) {
         else sprintf(buf, "Format of the MESSAGE Incorrect\n");
     
 		
-        //int return  isDeliverable()
-        //IF Found DELIVERING MESSAGE
-        
-        //IF Not Found write USER NOT CONNECTED
-        
         //Answer to Sender "DELIVERED or USER NOT CONNECTED"
         msg_len = strlen(buf);
 		bytes_sent = 0;
@@ -263,46 +283,12 @@ void connection_handler(int socket_desc, struct sockaddr_in* client_addr) {
             if (ret == -1) handle_error("Cannot write to the socket");
             bytes_sent += ret;
         }*/
-        
-        
-        
-        /*//EXPERIMENT
-
-		//Temp Refreshers
-		msg_len = strlen(buf);
-        buf[strlen(buf) - 1] = '\n'; // remove '\n' from the end of the message
-        
-		char temp_buf[1024];
-		memcpy(temp_buf, buf, sizeof(temp_buf));
-		int temp_recv_bytes = recv_bytes;
-		
-		for(int i=0; i<users.online; i++){
-			if(i==id)continue;
-			//Resetting for each user to send
-			memcpy(buf, temp_buf, sizeof(buf));
-			recv_bytes = temp_recv_bytes;
-			bytes_sent=0;
-			
-			while ( bytes_sent < recv_bytes) {
-				ret = send(users.socket_desc[i], buf + bytes_sent, recv_bytes - bytes_sent, 0);
-				if (ret == -1 && errno == EINTR) continue;
-				if (ret == -1) handle_error("Cannot write to the socket");
-				bytes_sent += ret;
-			}
-		}	*/
-        
-        
+       
         
     }
     // close socket
     ret = close(socket_desc);
-	
-	/*	
-	ret = sem_close(critical_section);
-	if(ret) {
-	    handle_error("sem_close failed");
-    }
-    * */
+
     if (ret) handle_error("Cannot close socket for incoming connection");
 }
 

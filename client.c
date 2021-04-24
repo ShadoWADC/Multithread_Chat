@@ -15,6 +15,7 @@ struct login
     char username[30];
     char password[20];
 };
+
 struct login l;
 int login (void);
 void registration (void);
@@ -43,6 +44,7 @@ int main(int argc, char* argv[]) {
 		else if (option == 0){
 				exit(EXIT_SUCCESS);
 		}	
+		
 	}while (option != 0);
 	
 	
@@ -88,21 +90,19 @@ int main(int argc, char* argv[]) {
 		if (ret == -1) handle_error("Cannot write to the socket");
 		bytes_sent += ret;
 	}
-    
-      
         
    // display welcome message from server
     memset(buf, 0, buf_len);
-    buf_len = sizeof(buf);
+    //buf_len = sizeof(buf);
     recv_bytes = 0;
-    do {
+    /*do {
         ret = recv(socket_desc, buf + recv_bytes, buf_len - recv_bytes, 0);
         if (ret == -1 && errno == EINTR) continue;
         if (ret == -1) handle_error("Cannot read from the socket");
         if (ret == 0) break;
 	   recv_bytes += ret;
     } while ( buf[recv_bytes-1] != '\n' );
-    printf("%s", buf);
+    printf("%s", buf);*/
 
     // main loop
     while (1) {
@@ -143,12 +143,13 @@ int main(int argc, char* argv[]) {
 			strcat( dest, ":");
 			strcat( dest, buf);
 			memcpy(buf, dest, sizeof(buf));
-			printf("\nBuffer %s",buf);
-			printf("\nStrlen:%ld\nSizeof:%zu\n",strlen(buf),sizeof(buf));
+			//printf("\nBuffer %s",buf);
+			//printf("\nStrlen:%ld\nSizeof:%zu\n",strlen(buf),sizeof(buf));
 			
 			
 			msg_len = strlen(buf);
 			buf[strlen(buf) - 1] = '\n'; // remove '\n' from the end of the message
+			
 			// send message to server
 			bytes_sent=0;
 			while ( bytes_sent < msg_len) {
@@ -160,7 +161,10 @@ int main(int argc, char* argv[]) {
 
 			/* After a quit command we won't receive any more data from
 			 * the server, thus we must exit the main loop. */
-			if (msg_len == quit_command_len && !memcmp(buf, quit_command, quit_command_len)) break;
+			//if (msg_len == quit_command_len && !memcmp(buf, quit_command, quit_command_len)) break;
+			
+			
+
 		}
 		else if(option == 2){ //RECIEVE
 			
@@ -168,8 +172,12 @@ int main(int argc, char* argv[]) {
 			/*clock_t start,current;
 			start = clock();*/
   
+			//Reading answer from SERVER
+			//Message Delivered
+			//USER NOT ONLINE
 			// read message from server
 			recv_bytes = 0;
+			memset(buf, 0, buf_len);
 			//int timeout_flag = -1;
 			do {
 				ret = recv(socket_desc, buf + recv_bytes, buf_len - recv_bytes, 0);
@@ -189,11 +197,16 @@ int main(int argc, char* argv[]) {
 			
 			/*if(!timeout_flag)*/ printf("Server response: %s\n", buf); // no need to insert '\0'
 			
+			
+			/* After a quit command we won't receive any more data from
+			 * the server, thus we must exit the main loop. */
+			if (msg_len == quit_command_len && !memcmp(buf, quit_command, quit_command_len)) break;
+			
 			//--------------
 			//GET SENDER - USERNAME
 			int len = strlen(buf);
 			int semi = 0;
-			int pos1 = 0, pos2 = 0;
+			int pos1 = 0, pos2 = 0;//, pos3 = 0;
 			//pos1 pos2 SENDER
 			//From pos3 to l is MSG
 
@@ -207,6 +220,10 @@ int main(int argc, char* argv[]) {
 						pos2 = i;
 						
 					}
+					/*if(semi == 2){
+						pos3 = i+1;
+						
+					}*/
 				}	
 			}
 			
@@ -219,9 +236,16 @@ int main(int argc, char* argv[]) {
 			}
 			sender[size_dest-1] = '\0';
 			
-
-			//Ricostruire messaggio
-			//SENDER:ME:MSG
+			/*const int size_msg = len-pos3+1;
+			char msg[size_msg];
+			k = 0;
+			for(int i = pos3; i<len; i++){
+				msg[k] = buf[i];
+				k++;
+			}
+			msg[size_msg-1] = '\0';*/
+			
+			
 			
 			//MESSAGE: USER_SOURCE:USER_DESTINATION:MESSAGE
 			//Concatenating USER to the message Header
