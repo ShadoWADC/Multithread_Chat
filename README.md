@@ -17,9 +17,9 @@ The project is composed by two main modules:
 ## Client: 
 * Provides a very simple interface to login or register a new user
 * Once succesfully logged in the Client will show a menu with 3 options:
-** Send a message
-** Check Inbox
-** Exit
+  * Send a message
+  * Check Inbox
+  * Exit
 
 ## Common errors are handled such as:
 * Incorrect credentials during login
