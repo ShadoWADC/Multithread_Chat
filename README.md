@@ -3,6 +3,8 @@
 # Final project for Operative Systems - Sapienza University of Rome
 # Teacher: Giorgio Grissetti and Irvin Aloise
 
+- - - -
+
 ## Description:
 The project consists in the development of a private chat environment 
 to exchange text messages between hosts. 
@@ -20,6 +22,8 @@ The project is composed by two main modules:
   * Send a message
   * Check Inbox
   * Exit
+
+- - - -
 
 ## Common errors handled:
 * Incorrect credentials during login
