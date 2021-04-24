@@ -1,7 +1,7 @@
 # TITLE: Multithread_Chat
 
 # Final project for Operative Systems - Sapienza University of Rome
-# Teacher: Giorgio Grissetti and Irvin Aloise
+# Professors: Giorgio Grissetti and Irvin Aloise
 
 - - - -
 
