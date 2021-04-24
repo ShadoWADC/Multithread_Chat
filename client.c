@@ -3,11 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <arpa/inet.h>  // htons() and inet_addr()
 #include <netinet/in.h> // struct sockaddr_in
 #include <sys/socket.h>
 #include <time.h>
- 
 #include "common.h"
 
 struct login                           
@@ -20,6 +20,7 @@ struct login l;
 int login (void);
 void registration (void);
 
+  
 int main(int argc, char* argv[]) {
 	int option;
 	do{
@@ -91,18 +92,8 @@ int main(int argc, char* argv[]) {
 		bytes_sent += ret;
 	}
         
-   // display welcome message from server
     memset(buf, 0, buf_len);
-    //buf_len = sizeof(buf);
     recv_bytes = 0;
-    /*do {
-        ret = recv(socket_desc, buf + recv_bytes, buf_len - recv_bytes, 0);
-        if (ret == -1 && errno == EINTR) continue;
-        if (ret == -1) handle_error("Cannot read from the socket");
-        if (ret == 0) break;
-	   recv_bytes += ret;
-    } while ( buf[recv_bytes-1] != '\n' );
-    printf("%s", buf);*/
 
     // main loop
     while (1) {
@@ -143,10 +134,7 @@ int main(int argc, char* argv[]) {
 			strcat( dest, ":");
 			strcat( dest, buf);
 			memcpy(buf, dest, sizeof(buf));
-			//printf("\nBuffer %s",buf);
-			//printf("\nStrlen:%ld\nSizeof:%zu\n",strlen(buf),sizeof(buf));
-			
-			
+
 			msg_len = strlen(buf);
 			buf[strlen(buf) - 1] = '\n'; // remove '\n' from the end of the message
 			
@@ -158,42 +146,35 @@ int main(int argc, char* argv[]) {
 				if (ret == -1) handle_error("Cannot write to the socket");
 				bytes_sent += ret;
 			}
-
-			/* After a quit command we won't receive any more data from
-			 * the server, thus we must exit the main loop. */
-			//if (msg_len == quit_command_len && !memcmp(buf, quit_command, quit_command_len)) break;
-			
-			
-
 		}
 		else if(option == 2){ //RECIEVE
 			
-			// Calculate the time taken by fun()
-			/*clock_t start,current;
-			start = clock();*/
-  
+			int flags = fcntl(socket_desc, F_GETFL);
+			fcntl(socket_desc, F_SETFL, flags | O_NONBLOCK);
+		
 			//Reading answer from SERVER
 			//Message Delivered
 			//USER NOT ONLINE
 			// read message from server
 			recv_bytes = 0;
 			memset(buf, 0, buf_len);
-			//int timeout_flag = -1;
+			
 			do {
 				ret = recv(socket_desc, buf + recv_bytes, buf_len - recv_bytes, 0);
 				if (ret == -1 && errno == EINTR) continue;
-				if (ret == -1) handle_error("Cannot read from the socket");
+				if (ret == -1) {
+						printf("Your Inbox is Empty, no incoming messages...\nPress a key to continue..\n.");
+						getchar();
+						flags = 999;
+						break/*handle_error("Cannot read from the socket")*/;//Since is non blocking
+					}
 				if (ret == 0) break;
-				recv_bytes += ret;
-				
-				/*current = clock() - start;
-				double time_taken = ((double)current)/CLOCKS_PER_SEC; // in seconds
-				if(TIMEOUT < time_taken){
-					printf("Server timeout: No messages in your inbox\n"); 	
-					timeout_flag = 1;
-					break;
-				}*/
+				recv_bytes += ret;				
 			} while ( buf[recv_bytes-1] != '\n' );
+			
+
+			fcntl(socket_desc, F_SETFL, 0); //Setting it back to Blocking
+			if(flags==999) continue; //No Inbox Case
 			
 			/*if(!timeout_flag)*/ printf("Server response: %s\n", buf); // no need to insert '\0'
 			
@@ -206,12 +187,8 @@ int main(int argc, char* argv[]) {
 			//GET SENDER - USERNAME
 			int len = strlen(buf);
 			int semi = 0;
-			int pos1 = 0, pos2 = 0;//, pos3 = 0;
-			//pos1 pos2 SENDER
-			//From pos3 to l is MSG
+			int pos1 = 0, pos2 = 0;
 
-	
-	
 			int start = 0; //Start of Message
 			for(int i = 0; i<len; i++){
 				if(buf[i]==':') {
@@ -220,10 +197,6 @@ int main(int argc, char* argv[]) {
 						pos2 = i;
 						
 					}
-					/*if(semi == 2){
-						pos3 = i+1;
-						
-					}*/
 				}	
 			}
 			
@@ -235,18 +208,8 @@ int main(int argc, char* argv[]) {
 				k++;
 			}
 			sender[size_dest-1] = '\0';
-			
-			/*const int size_msg = len-pos3+1;
-			char msg[size_msg];
-			k = 0;
-			for(int i = pos3; i<len; i++){
-				msg[k] = buf[i];
-				k++;
-			}
-			msg[size_msg-1] = '\0';*/
-			
-			
-			
+
+
 			//MESSAGE: USER_SOURCE:USER_DESTINATION:MESSAGE
 			//Concatenating USER to the message Header
 			if(semi>=2){
@@ -276,11 +239,8 @@ int main(int argc, char* argv[]) {
 			printf("Press any key to go back to the main MENU...");
 			getchar();	
 		}
-        
-
-        
+ 
     }
-
 
     // close the socket
     ret = close(socket_desc);

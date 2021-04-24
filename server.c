@@ -11,23 +11,8 @@
 #include "common.h"
 #include <pthread.h>
 
-/*
-#include <sys/wait.h>
-#include <fcntl.h>
-#include <semaphore.h>
-
-
-#define CRITICAL_SECTION "/critical_section"
-sem_t *critical_section = NULL;
-*/
-
 typedef struct handler_args_s
 {
-    /** SOLUTION
-     *
-     * Specify fields for the arguments that will be populated in the
-     * main thread and then accessed in connection_handler(void* arg).
-     **/
     int socket_desc;
     struct sockaddr_in* client_addr;
 } handler_args_t;
@@ -131,11 +116,6 @@ int isDeliverable(char * msg){
 	
 	size_t temp = strlen("Message Read\n");
 	int descriptor = 0;
-	/*printf("\nIL MESSAGGIO ESTRATTO E' <%s>",data);
-	printf("\nStrlen:%ld\nSizeof:%zu\n",strlen(data),sizeof(data));
-	printf("\nVS\n");
-	printf("\MESSAGE:<%s>","Message Read\n");
-	printf("\nStrlen:%ld\nSizeof:%zu\n",strlen("Message Read\n"),sizeof("Message Read\n"));*/
 	
 	if (strlen(data) == temp && !memcmp(data, "Message Read\n", temp)) {
 		//printf("\nSIAMO NELL IF DEL DELIVERED\n");
@@ -181,13 +161,6 @@ void connection_handler(int socket_desc, struct sockaddr_in* client_addr) {
 	
 	buf[strlen(buf) - 1] = '\0';
 	
-	/*
-	// enter critical section
-    ret = sem_wait(critical_section);
-    if(ret) {
-        handle_error("sem_wait failed");
-	}
-    */
     
 	//Critical Section
 	memcpy(users.list[users.online], buf, sizeof(users.list[users.online])); //Copy message recieved to username list
@@ -198,30 +171,9 @@ void connection_handler(int socket_desc, struct sockaddr_in* client_addr) {
 	//Critical Section
 	printOnlineUsers(id);
 	
-	/*
-	// exit critical section
-    ret = sem_post(critical_section);
-	if(ret) {
-	    handle_error("sem_post failed");
-	}
-	*/
 	
 	//WELCOME
-	
 	buf_len = sizeof(buf);
-	memset(buf, 0, buf_len); //TO CHECK 
-    // send custom welcome message - and print user connected on the server thread
-    /*sprintf(buf, "Hi! I'm an echo server. You are %s talking on port %hu.\nI will send you back whatever"
-            " you send me. I will stop if you send me %s :-)\n", client_ip, client_port, quit_command);
-    msg_len = strlen(buf);
-    int bytes_sent = 0;
-	while ( bytes_sent < msg_len) {
-        ret = send(socket_desc, buf + bytes_sent, msg_len - bytes_sent, 0);
-        if (ret == -1 && errno == EINTR) continue;
-        if (ret == -1) handle_error("Cannot write to the socket");
-        bytes_sent += ret;
-    }*/
-	
 	int bytes_sent = 0;
 	//First value does not arrive
     // echo loop
@@ -248,7 +200,6 @@ void connection_handler(int socket_desc, struct sockaddr_in* client_addr) {
         //Delivering message to reciever
         //Searching for User
         int test = isDeliverable(buf); //if > returns SOCKET Descriptor of Dest, otherwise error
-        //printf("\nResult of test = %d\n",test);
         
         if(test > 0 && test <1000){ //MSG is Fine and USER is Online - Sendint to DESTINATARIO
 			bytes_sent=0;
@@ -272,19 +223,7 @@ void connection_handler(int socket_desc, struct sockaddr_in* client_addr) {
 			if (ret == -1 && errno == EINTR) continue;
 			if (ret == -1) handle_error("Cannot write to the socket");
 			bytes_sent += ret;
-		}
-        
-        
-        //ORIGINAL
-        /*bytes_sent=0;
-        while ( bytes_sent < recv_bytes) {
-            ret = send(socket_desc, buf + bytes_sent, recv_bytes - bytes_sent, 0);
-            if (ret == -1 && errno == EINTR) continue;
-            if (ret == -1) handle_error("Cannot write to the socket");
-            bytes_sent += ret;
-        }*/
-       
-        
+		} 
     }
     // close socket
     ret = close(socket_desc);
@@ -325,21 +264,6 @@ void mthreadServer(int server_desc) {
         
         if (DEBUG) fprintf(stderr, "Incoming connection accepted...\n");
 
-        /** SOLUTION
-         *
-         * Suggestions:
-         * - connection_handler(void* arg) is the method to execute in
-         *   the thread we are going to spawn
-         * - allocate a handler_args_t data structure and populate it
-         *   with the arguments that will be passed to the thread
-         * - print a debug message to inform the user that a new thread
-         *   has been created to handle the request
-         * - since we don't need to pthread_join(), release libpthread's
-         *   internal resources after pthread_create()
-         * - to accept a new connection while a thread is executing, be
-         *   careful: resetting fields in client_addr won't work!
-         **/
-
         pthread_t thread;
 
         // prepare arguments for the new thread
@@ -359,23 +283,10 @@ void mthreadServer(int server_desc) {
 
 int main(int argc, char* argv[]) {
     int ret;
-	
-	/*
-	// critical section named semaphore
-	sem_unlink(CRITICAL_SECTION);
-    critical_section = sem_open(CRITICAL_SECTION, O_CREAT|O_EXCL, 0600, 1);
-	if (critical_section == SEM_FAILED) {
-		handle_error("Error creating named semaphore");
-	}
-	*/	
-    
-    
     int socket_desc;
 
     // some fields are required to be filled with 0
     struct sockaddr_in server_addr = {0};
-
-     // we will reuse it for accept()
 
     // initialize socket for listening
     socket_desc = socket(AF_INET , SOCK_STREAM , 0);
