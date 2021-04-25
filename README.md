@@ -48,13 +48,13 @@ Run in different terminals:
 You could either register a new user, or login with one of the 3 default accounts.
 
 Default Accounts:
-1. Account #1
+* Account #1
   * Username: A 
   * Password: a
-2. Account #2
+* Account #2
   * Username: B 
   * Password: b
-3. Account #3
+* Account #3
   * Username: C 
   * Password: c
 
