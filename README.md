@@ -41,13 +41,16 @@ to exchange text messages between hosts.
 ## How-to-run:
 Compile the project using the Makefile
 
-Run in different terminals:
+
+**Run in different terminals:**
 * First the server, ./server_multithread
 * Run the clients, ./client
 
+
 You could either register a new user, or login with one of the 3 default accounts.
 
-Default Accounts:
+
+**Default Accounts:**
 * Account #1
   * Username: A 
   * Password: a
@@ -58,7 +61,9 @@ Default Accounts:
   * Username: C 
   * Password: c
 
+
 Remeber the format to send a message:
 ***USERNAME_DESTINATARIO:Messaggio***
+
 
 *The project has been tested with 3 users and by default could support until 5 users as specified in common.h in the constant MAX_USERS*
