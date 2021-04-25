@@ -9,10 +9,12 @@
 The project consists in the development of a private chat environment 
 to exchange text messages between hosts. 
 
-The project is composed by two main modules:
+***The project is composed by two main modules:***
 
 ## Server: 
-* Receives and does not store messages.
+* Receives and does not store messages
+* Previews messages sent between users and READ notification
+* Once a user logs in, the server will clean the log and show the new list of connected users
 * Forwards the messages from client to client
 * Notifies to the Sender Client, Delivered and Read status in their respective cases once they occur
 
@@ -20,7 +22,11 @@ The project is composed by two main modules:
 * Provides a very simple interface to login or register a new user
 * Once succesfully logged in the Client will show a menu with 3 options:
   * Send a message
+   * Deliver a message in the following format -> *USERNAME_OF_THE_RECIEVER:MESSAGE*  
   * Check Inbox
+   * Shows incoming messages
+   * Incoming notifications
+   * In case of empty Inbox, given the NON-Blocking Recv implementation will print ("Empty Inbox, press a key to continue")
   * Exit
 
 - - - -
