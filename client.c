@@ -189,13 +189,11 @@ int main(int argc, char* argv[]) {
 			int semi = 0;
 			int pos1 = 0, pos2 = 0;
 
-			int start = 0; //Start of Message
 			for(int i = 0; i<len; i++){
 				if(buf[i]==':') {
 					semi++;
 					if(semi == 1){
 						pos2 = i;
-						
 					}
 				}	
 			}

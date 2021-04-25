@@ -115,7 +115,7 @@ int isDeliverable(char * msg){
 	int descriptor = 0;
 	
 	if (strlen(data) == temp && !memcmp(data, "Message Read\n", temp)) {
-		//printf("\nSIAMO NELL IF DEL DELIVERED\n");
+		printf("\nSIAMO NELL IF DEL DELIVERED\n");
 		descriptor = 1000;	
 	}
 
@@ -199,19 +199,29 @@ void connection_handler(int socket_desc, struct sockaddr_in* client_addr) {
         int test = isDeliverable(buf); //if > returns SOCKET Descriptor of Dest, otherwise error
         
         if(test > 0 && test <1000){ //MSG is Fine and USER is Online - Sendint to DESTINATARIO
-			bytes_sent=0;
-			while ( bytes_sent < recv_bytes) {
-				ret = send(test, buf + bytes_sent, recv_bytes - bytes_sent, 0);
-				if (ret == -1 && errno == EINTR) continue;
-				if (ret == -1) handle_error("Cannot write to the socket");
-				bytes_sent += ret;
-			}
-			sprintf(buf, "Message Delivered\n");
-		} 
+		bytes_sent=0;
+		while ( bytes_sent < recv_bytes) {
+			ret = send(test, buf + bytes_sent, recv_bytes - bytes_sent, 0);
+			if (ret == -1 && errno == EINTR) continue;
+			if (ret == -1) handle_error("Cannot write to the socket");
+			bytes_sent += ret;
+		}
+		sprintf(buf, "Message Delivered\n");
+	} 
         else if(test == -3) sprintf(buf, "User not ONLINE\n");
+        else if(test>1000) { //MSG is Fine and USER is Online - Sendint to DESTINATARIO
+        	test-=1000;
+		bytes_sent=0;
+		while ( bytes_sent < recv_bytes) {
+			ret = send(test, buf + bytes_sent, recv_bytes - bytes_sent, 0);
+			if (ret == -1 && errno == EINTR) continue;
+			if (ret == -1) handle_error("Cannot write to the socket");
+			bytes_sent += ret;
+		}
+		continue; //Case Notification READ, no need to notify a Deliver
+	} 
         else sprintf(buf, "Format of the MESSAGE Incorrect\n");
-    
-		
+    	
         //Answer to Sender "DELIVERED or USER NOT CONNECTED"
         msg_len = strlen(buf);
 		bytes_sent = 0;
