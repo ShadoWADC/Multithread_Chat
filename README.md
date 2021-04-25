@@ -22,11 +22,11 @@ to exchange text messages between hosts.
 * Provides a very simple interface to login or register a new user
 * Once succesfully logged in the Client will show a menu with 3 options:
   * Send a message
-   * Deliver a message in the following format -> *USERNAME_OF_THE_RECIEVER:MESSAGE*  
+    * Deliver a message in the following format -> *USERNAME_OF_THE_RECIEVER:MESSAGE*  
   * Check Inbox
-   * Shows incoming messages
-   * Incoming notifications
-   * In case of empty Inbox, given the NON-Blocking Recv implementation will print ("Empty Inbox, press a key to continue")
+    * Shows incoming messages
+    * Incoming notifications
+    * In case of empty Inbox, given the NON-Blocking Recv implementation will print ("Empty Inbox, press a key to continue")
   * Exit
 
 - - - -
