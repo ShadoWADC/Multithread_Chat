@@ -44,7 +44,7 @@ Compile the project using the Makefile
 
 **Run in different terminals:**
 * First the server, ./server_multithread
-* Run the clients, ./client
+* Then run the clients, ./client
 
 
 You could either register a new user, or login with one of the 3 default accounts.
