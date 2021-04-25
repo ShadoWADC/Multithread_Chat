@@ -59,6 +59,6 @@ Default Accounts:
   * Password: c
 
 Remeber the format to send a message:
-*** USERNAME_DESTINATARIO:Messaggio
+***USERNAME_DESTINATARIO:Messaggio***
 
 *The project has been tested with 3 users and by default could support until 5 users as specified in common.h in the constant MAX_USERS*
