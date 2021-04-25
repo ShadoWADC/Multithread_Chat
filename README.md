@@ -36,4 +36,29 @@ to exchange text messages between hosts.
 * Connection error, when connecting from the Client when the Server is not online
 * User Offline notification, when sending a message to an offline user
 
-The project has been tested with 3 users and by default could support until 5 users as specified in common.h in the constant MAX_USERS
+- - - -
+
+## How-to-run:
+Compile the project using the Makefile
+
+Run in different terminals:
+* First the server, ./server_multithread
+* Run the clients, ./client
+
+You could either register a new user, or login with one of the 3 default accounts.
+
+Default Accounts:
+1. Account #1
+  * Username: A 
+  * Password: a
+2. Account #2
+  * Username: B 
+  * Password: b
+3. Account #3
+  * Username: C 
+  * Password: c
+
+Remeber the format to send a message:
+*** USERNAME_DESTINATARIO:Messaggio
+
+*The project has been tested with 3 users and by default could support until 5 users as specified in common.h in the constant MAX_USERS*
