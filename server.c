@@ -21,19 +21,24 @@ struct users_online_t
 {
 	int socket_desc[MAX_USERS]; //SOCKET DESCRIPTORS
     char list[MAX_USERS][30]; //USERNAME
-    int online; //NUMBER OF USERS ONLINE
+    int disconnected[MAX_USERS]; //DID THE USER LOGOUT?
     char client_ip[MAX_USERS][INET_ADDRSTRLEN]; //IP ADDRESS 
 	uint16_t client_port[MAX_USERS];	//PORT
 };
+
 struct users_online_t users;
 
-void printOnlineUsers(int id){
+int online = 0;
+int max_online = 0; 
+
+void printOnlineUsers(){
 	system("clear");
 	printf("Welcome to the Chat Service 1.0\n");
-	printf("Online Users List(%d/%d)\n", users.online, MAX_USERS);
+	printf("Online Users List(%d/%d)\n", online, MAX_USERS);
 	
-	for(int i = 0; i<users.online ; i++){
-		printf("ID:%d\tUsername:%s\tClient:%s\tPort:%hu\tDescriptor: %d\n", i, users.list[i], users.client_ip[i], users.client_port[i], users.socket_desc[i]);	
+	for(int i = 0; i<max_online ; i++){
+		if(users.disconnected[i]==0)
+			printf("ID:%d\tUsername:%s\tClient:%s\tPort:%hu\tDescriptor: %d\n", i, users.list[i], users.client_ip[i], users.client_port[i], users.socket_desc[i]);	
 	}
 }
 
@@ -56,14 +61,12 @@ int getSenderDescriptor(char * msg){
 	const int size_dest = pos2-pos1/*+1*/;
 	char sender [size_dest];
 	int k = 0;
-	//printf("\nDESTINATARIO: ");
 	for(int i = pos1; i<pos2; i++){
 		sender[k] = msg[i];
-		//printf("%c", destinatario[k]);
 		k++;
 	}
 	
-	for(int i = 0; i<users.online; i++){
+	for(int i = 0; i<online; i++){
 		if(!memcmp(users.list[i], sender, sizeof(sender))) return users.socket_desc[i];
 	}
 	
@@ -88,8 +91,6 @@ int isDeliverable(char * msg){
 	}
 	if(semi<2) return -2;
 	
-
-	
 	const int size_dest = pos2-pos1;
 	char destinatario [size_dest];
 	int k = 0;
@@ -102,10 +103,8 @@ int isDeliverable(char * msg){
 	char data[size_data];
 	k = 0;
 	
-	//printf("\nRIGAPERRIGA:\n");
 	for(int i = pos2+1; i<l; i++){
 		data[k] = msg[i];
-		//printf("#%d<%c>\n",k,data[k]);
 		k++;
 	}
 	data[size_data-1] = '\0';
@@ -115,14 +114,13 @@ int isDeliverable(char * msg){
 	int descriptor = 0;
 	
 	if (strlen(data) == temp && !memcmp(data, "Message Read\n", temp)) {
-		printf("\nSIAMO NELL IF DEL DELIVERED\n");
 		descriptor = 1000;	
 	}
 
 	//Search in connected USERS:
-	if (users.online==1) return -3; //Online da solo -> USER NOT ONLINE
+	if (online==1) return -3; //Online da solo -> USER NOT ONLINE
 	
-	for(int i = 0; i<users.online; i++){
+	for(int i = 0; i<online; i++){
 		if(!memcmp(users.list[i], destinatario, sizeof(destinatario))) return descriptor+users.socket_desc[i];
 	}
 	
@@ -137,8 +135,8 @@ void connection_handler(int socket_desc, struct sockaddr_in* client_addr) {
     size_t buf_len = sizeof(buf);
     int msg_len;
 
-    char* quit_command = SERVER_COMMAND;
-    size_t quit_command_len = strlen(quit_command);
+    char* client_logout = CLIENT_LOGOUT;
+    size_t client_logout_len = strlen(client_logout);
 
     // parse client IP address and port
     char client_ip[INET_ADDRSTRLEN];
@@ -160,16 +158,15 @@ void connection_handler(int socket_desc, struct sockaddr_in* client_addr) {
 	
     
 	//Critical Section
-	memcpy(users.list[users.online], buf, sizeof(users.list[users.online])); //Copy message recieved to username list
-	memcpy(users.client_ip[users.online], client_ip, sizeof(users.client_ip[users.online])); 
-	users.client_port[users.online] = client_port;
-	id = users.online;
-	users.online++;
+	memcpy(users.list[online], buf, sizeof(users.list[online])); //Copy message recieved to username list
+	memcpy(users.client_ip[online], client_ip, sizeof(users.client_ip[online])); 
+	users.client_port[online] = client_port;
+	id = online;
+	online++;
+	max_online++;
 	//Critical Section
-	printOnlineUsers(id);
+	printOnlineUsers();
 	
-	
-	//WELCOME
 	buf_len = sizeof(buf);
 	int bytes_sent = 0;
 	//First value does not arrive
@@ -184,42 +181,49 @@ void connection_handler(int socket_desc, struct sockaddr_in* client_addr) {
             if (ret == -1) handle_error("Cannot read from the socket");
             if (ret == 0) break;
 		} while ( buf[recv_bytes++] != '\n' );
-		
 	
         // check whether I have just been told to quit...
-        if (recv_bytes == 0) break;
-        if (recv_bytes == quit_command_len && !memcmp(buf, quit_command, quit_command_len)) break;
+        if (recv_bytes == 0) break;		
+		
+        if (recv_bytes == client_logout_len && !memcmp(buf, client_logout, client_logout_len)) { //LOGOUT
+			users.disconnected[id]=-1;
+			online-=1;
+			printOnlineUsers();
+			if(online == 0) {				
+				ret = close(socket_desc);
+				if (ret) handle_error("Cannot close socket for incoming connection");
+				exit(EXIT_SUCCESS);
+			}
+		}
 		printf("%s->%s", users.list[id], buf);
         // ... or if I have to send the message back
-        
-        
-        
+             
         //Delivering message to reciever
         //Searching for User
         int test = isDeliverable(buf); //if > returns SOCKET Descriptor of Dest, otherwise error
         
         if(test > 0 && test <1000){ //MSG is Fine and USER is Online - Sendint to DESTINATARIO
-		bytes_sent=0;
-		while ( bytes_sent < recv_bytes) {
-			ret = send(test, buf + bytes_sent, recv_bytes - bytes_sent, 0);
-			if (ret == -1 && errno == EINTR) continue;
-			if (ret == -1) handle_error("Cannot write to the socket");
-			bytes_sent += ret;
-		}
-		sprintf(buf, "Message Delivered\n");
-	} 
+			bytes_sent=0;
+			while ( bytes_sent < recv_bytes) {
+				ret = send(test, buf + bytes_sent, recv_bytes - bytes_sent, 0);
+				if (ret == -1 && errno == EINTR) continue;
+				if (ret == -1) handle_error("Cannot write to the socket");
+				bytes_sent += ret;
+			}
+			sprintf(buf, "Message Delivered\n");
+		} 
         else if(test == -3) sprintf(buf, "User not ONLINE\n");
         else if(test>1000) { //MSG is Fine and USER is Online - Sendint to DESTINATARIO
         	test-=1000;
-		bytes_sent=0;
-		while ( bytes_sent < recv_bytes) {
-			ret = send(test, buf + bytes_sent, recv_bytes - bytes_sent, 0);
-			if (ret == -1 && errno == EINTR) continue;
-			if (ret == -1) handle_error("Cannot write to the socket");
-			bytes_sent += ret;
-		}
-		continue; //Case Notification READ, no need to notify a Deliver
-	} 
+			bytes_sent=0;
+			while ( bytes_sent < recv_bytes) {
+				ret = send(test, buf + bytes_sent, recv_bytes - bytes_sent, 0);
+				if (ret == -1 && errno == EINTR) continue;
+				if (ret == -1) handle_error("Cannot write to the socket");
+				bytes_sent += ret;
+			}		
+			continue; //Case Notification READ, no need to notify a Deliver
+		} 
         else sprintf(buf, "Format of the MESSAGE Incorrect\n");
     	
         //Answer to Sender "DELIVERED or USER NOT CONNECTED"
@@ -277,7 +281,7 @@ void mthreadServer(int server_desc) {
         handler_args_t *thread_args = malloc(sizeof(handler_args_t));
         thread_args->socket_desc = client_desc;
         thread_args->client_addr = client_addr;
-        users.socket_desc[users.online] = client_desc; //EDIT
+        users.socket_desc[online] = client_desc; //EDIT
         ret = pthread_create(&thread, NULL, thread_connection_handler, (void *)thread_args);
         if (ret) handle_error_en(ret, "Could not create a new thread");
         

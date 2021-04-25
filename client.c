@@ -20,7 +20,6 @@ struct login l;
 int login (void);
 void registration (void);
 
-  
 int main(int argc, char* argv[]) {
 	int option;
 	do{
@@ -47,8 +46,7 @@ int main(int argc, char* argv[]) {
 		}	
 		
 	}while (option != 0);
-	
-	
+
     int ret,bytes_sent,recv_bytes;
 
     // variables for handling a socket
@@ -97,8 +95,6 @@ int main(int argc, char* argv[]) {
 
     // main loop
     while (1) {
-        char* quit_command = SERVER_COMMAND;
-        size_t quit_command_len = strlen(quit_command);
         do{
 			system("clear");
 			printf("Welcome to the Chat Client!\nPlease select an option:\n");
@@ -111,11 +107,30 @@ int main(int argc, char* argv[]) {
 		
 		
 		if (option == 0){
+				//SEND DISCONNECTED WORD
+				memcpy(buf, CLIENT_LOGOUT, sizeof(buf));
+
+				msg_len = strlen(buf);
+				buf[strlen(buf) - 1] = '\n'; // remove '\n' from the end of the message
+				
+				// send message to server
+				bytes_sent=0;
+				while ( bytes_sent < msg_len) {
+					ret = send(socket_desc, buf + bytes_sent, msg_len - bytes_sent, 0);
+					if (ret == -1 && errno == EINTR) continue;
+					if (ret == -1) handle_error("Cannot write to the socket");
+					bytes_sent += ret;
+				}
+			
+				 // close the socket
+				ret = close(socket_desc);
+				if(ret) handle_error("Cannot close socket");
+
 				exit(EXIT_SUCCESS);
 		}
 		else if(option == 1){ //SEND
 			system("clear");
-			printf("MESSAGE FORMAT = USERNAME_DEST:MESSAGE\n");
+			printf("MESSAGE FORMAT\t=\t'USERNAME_DEST:MESSAGE'\n");
 			printf("Insert your message: ");
 
 			/* Read a line from stdin
@@ -178,22 +193,20 @@ int main(int argc, char* argv[]) {
 			
 			/*if(!timeout_flag)*/ printf("Server response: %s\n", buf); // no need to insert '\0'
 			
-			
-			/* After a quit command we won't receive any more data from
-			 * the server, thus we must exit the main loop. */
-			if (msg_len == quit_command_len && !memcmp(buf, quit_command, quit_command_len)) break;
-			
 			//--------------
 			//GET SENDER - USERNAME
 			int len = strlen(buf);
 			int semi = 0;
-			int pos1 = 0, pos2 = 0;
+			int pos1 = 0, pos2 = 0, pos3 = 0;
 
 			for(int i = 0; i<len; i++){
 				if(buf[i]==':') {
 					semi++;
 					if(semi == 1){
 						pos2 = i;
+					}
+					if(semi == 2){
+						pos3 = i;
 					}
 				}	
 			}
@@ -207,7 +220,22 @@ int main(int argc, char* argv[]) {
 			}
 			sender[size_dest-1] = '\0';
 
-
+			const int size_data = len-pos3;
+			char data[size_data];
+			k = 0;
+			
+			for(int i = pos3+1; i<len; i++){
+				data[k] = buf[i];
+				k++;
+			}
+			data[size_data-1] = '\0';
+				
+			
+			size_t temp = strlen("Message Read\n");
+			if (strlen(data) == temp && !memcmp(data, "Message Read\n", temp)) {
+				continue;
+			}
+			
 			//MESSAGE: USER_SOURCE:USER_DESTINATION:MESSAGE
 			//Concatenating USER to the message Header
 			if(semi>=2){
@@ -220,7 +248,6 @@ int main(int argc, char* argv[]) {
 				strcat( temp, "Message Read\n"); 
 				memcpy(buf, temp, sizeof(buf));
 				
-				
 				msg_len = strlen(buf);
 				// send message to server
 				bytes_sent=0;
@@ -231,13 +258,10 @@ int main(int argc, char* argv[]) {
 					bytes_sent += ret;
 				}
 			}
-
 			//---------
-			
 			printf("Press any key to go back to the main MENU...");
 			getchar();	
 		}
- 
     }
 
     // close the socket
